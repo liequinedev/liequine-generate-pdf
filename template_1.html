@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generated PDF</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+        max-width: 100%;
+        width: fit-content;
+        border: 2px solid black;
+        margin: 0 auto;
+        padding: 30px;
+        min-height: calc(100vh - 80px);
+        page-break-after: always;
+    }
+
+    h1, h3, p {
+        text-align: center;
+        margin: 0;
+    }
+
+    h1 {
+        font-size: 34px;
+        margin-bottom: 10px;
+    }
+
+    .address-sec {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 1rem;
+    }
+
+    .address p {
+        text-align: left;
+    }
+
+    .static-content-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .static-title {
+        border: 5px solid black;
+        padding: 10px;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .static-subcnt-div {
+        border: 2px solid black;
+        padding: 10px;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .static-sub-image {
+        border: 2px solid black;
+        padding: 10px;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .footer-section {
+        border: 5px solid black;
+        padding: 10px;
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .static-cnt-div {
+        display: grid;
+        grid-template-rows: auto 1fr;
+    }
+
+    .static-subcnt-div p {
+        margin-bottom: 1rem;
+    }
+
+    /* Hide button in printed PDF */
+    @media print {
+      #downloadBtn {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="pdf-content"></div>
+  <div style="text-align: center; margin: 20px;">
+    <button id="downloadBtn">Download PDF</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    async function renderContent() {
+    const response = await fetch('get_data.php');
+    const data = await response.json();
+
+
+    const csvText = await fetch(data.csv_path).then(r => r.text());
+    const rows = csvText.trim().split("\n").map(r => r.split(','));
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const users = rows.slice(1).map(row => {
+        let obj = {};
+        headers.forEach((h, i) => obj[h] = row[i]);
+        return obj;
+    });
+
+    let html = '';
+    users.forEach((user, index) => {
+        const line1 = [user['street number'], user['street address'], user['street dir'], user['mailing address']].filter(Boolean).join(' ');
+        const line2 = [user['mailing town'], user['mailing zip'], user['mailing carrier route'], user['county'], user['state']].filter(Boolean).join(', ');
+        const fullAddr = `${line1}<br>${line2}`;
+
+        html += `
+        <section class="container">
+            <h1>${data.heading}</h1>
+            <h3>${data.subheading}</h3>
+            <div class="address-sec">
+                <div class="address">
+                    <p>${user['first name'] || ''} ${user['last name'] || ''}</p>
+                    <p>${fullAddr}</p>
+                </div>
+                <div class="image-sec">
+                    <img src="${data.image_path}" alt="Image" width="100">
+                </div>
+            </div>
+
+            <div class="static-content-section">
+                <div class="static-cnt-div section1">
+                    <div class="static-title">FROM US TO YOU</div>
+                    <div class="static-subcnt-div">
+                        ${data.content1.split('\n').map(p => `<p>${p}</p>`).join('')}
+                    </div>
+                </div>
+                <div class="static-cnt-div section2">
+                    <div class="static-subcnt-div">
+                        ${data.content2.split('\n').map(p => `<p>${p}</p>`).join('')}
+                    </div>
+                    <div class="static-sub-image">
+                        <img src="uploads/pdf_sub_image.jpg" alt="Sub Image" width="100">
+                    </div>
+                </div>
+                <div class="static-cnt-div section3">
+                    <div class="static-title">IN ADDITION</div>
+                    <div class="static-subcnt-div">
+                        ${data.content3.split('\n').map(p => `<p>${p}</p>`).join('')}
+                    </div>
+                </div>
+            </div>
+            <div class="footer-section">Connecting Horse Lovers with Horse Properties</div>
+        </section>
+        `;
+    });
+
+    document.getElementById('pdf-content').innerHTML = html;
+
+    // ✅ MOVE THIS INSIDE renderContent
+    if (data.action === 'download') {
+        downloadPDF();
+    }
+}
+
+
+    function downloadPDF() {
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Debounce to wait until scroll stops
+        let isScrolling;
+
+        // Listen for scroll end
+        window.addEventListener('scroll', function scrollListener() {
+            window.clearTimeout(isScrolling);
+
+            isScrolling = setTimeout(() => {
+                window.removeEventListener('scroll', scrollListener); // Cleanup
+
+                // Once scroll is done, generate PDF
+                const element = document.getElementById('pdf-content');
+                const opt = {
+                    margin: 0.5,
+                    filename: 'output.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'] }
+                };
+
+                html2pdf().set(opt).from(element).save();
+            }, 300); // Wait 300ms after last scroll event
+        });
+    }
+
+
+
+    document.getElementById('downloadBtn').addEventListener('click', downloadPDF);
+    renderContent();
+  </script>
+</body>
+</html>

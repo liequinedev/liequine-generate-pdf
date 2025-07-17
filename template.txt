@@ -1,0 +1,64 @@
+<body>
+    <div id="pdf-content"></div>
+    <button onclick="downloadPDF()">Download as PDF</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+    async function renderContent() {
+        const response = await fetch('temp/data.json');
+        const data = await response.json();
+
+        const csvText = await fetch(data.csv_path).then(r => r.text());
+        const rows = csvText.trim().split("\n").map(r => r.split(','));
+        const headers = rows[0].map(h => h.trim().toLowerCase());
+        const users = rows.slice(1).map(row => {
+            let obj = {};
+            headers.forEach((h, i) => obj[h] = row[i]);
+            return obj;
+        });
+
+        let html = '';
+        users.forEach(user => {
+            const line1 = [user['street number'], user['street address'], user['street dir'], user['mailing address']].filter(Boolean).join(' ');
+            const line2 = [user['mailing town'], user['mailing zip'], user['mailing carrier route'], user['county'], user['state']].filter(Boolean).join(', ');
+            const fullAddr = `${line1}<br>${line2}`;
+
+            html += `
+            <section class="container">
+                <h1>${data.heading}</h1>
+                <h3>${data.subheading}</h3>
+                <div class="address-sec">
+                    <div class="address">
+                        <p>${user['first name'] || ''} ${user['last name'] || ''}</p>
+                        <p>${fullAddr}</p>
+                    </div>
+                    <div class="image-sec">
+                        <img src="${data.image_path}" alt="Image" width="100">
+                    </div>
+                </div>
+                <div class="static-content-section">
+                    <div class="static-subcnt-div">
+                        <p>${data.content1}</p>
+                        <p>${data.content2}</p>
+                        <p>${data.content3}</p>
+                    </div>
+                </div>
+                <hr>
+            </section>
+            `;
+        });
+
+        document.getElementById('pdf-content').innerHTML = html;
+
+        if (data.action === 'download') {
+            downloadPDF(); // auto-download if triggered from Download button
+        }
+    }
+
+    function downloadPDF() {
+        html2pdf().from(document.getElementById("pdf-content")).save("output.pdf");
+    }
+
+    renderContent();
+    </script>
+</body>

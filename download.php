@@ -1,0 +1,1 @@
+$pdf->Output('user_pdfs.pdf', 'D'); // Forces download
