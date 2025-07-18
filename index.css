@@ -1,0 +1,54 @@
+.form-field-div{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+    gap: 15px;
+}
+body{
+    background-image: linear-gradient(transparent 50%, #355e3b 50%);
+}
+#pdfForm{
+    margin-top: 2rem;
+    background-color: white;
+    padding: 3rem;
+    border-radius: 2rem;
+    margin-bottom: 5rem;
+    box-shadow: 0 0 6px 0px #cc9c5c;
+}
+#pdfForm input, #pdfForm textarea{
+    border-radius: 15px;
+    padding: 10px;
+    border: 2px solid #e9d4b9;
+}
+input[type="file"]{
+    border: unset !important;
+    padding: 0 !important;
+    border-radius: unset !important;
+    margin-bottom: 10px !important;
+}
+#pdfForm textarea{
+    resize: none;
+}
+#pdfForm input:focus-visible{
+    border-color: #c9841c;
+    outline: none;
+}
+#pdfForm textarea:focus-visible{
+    border-color: #c9841c;
+    outline: none;
+}
+.pdfform-btn{
+    width: fit-content;
+    margin: 0 auto;
+    margin-top: 1rem;
+}
+button[type="submit"]{
+    background-color: #8f5a34;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 700;
+}
+button[type="submit"]:hover{    
+    background-color: #bf7f51;
+}
