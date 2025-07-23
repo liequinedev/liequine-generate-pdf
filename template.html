@@ -160,6 +160,13 @@
         const line1 = [user['mailing address']].filter(Boolean).join(' ');
         const line2 = [user['mailing town'], user['mailing zip'], user['mailing carrier route'], user['county'], user['state']].filter(Boolean).join(', ');
         const fullAddr = `${line1}<br>${line2}`;
+        const barcodeImg = data.barcodes && data.barcodes[index] ? data.barcodes[index] : null;
+        
+        if (barcodeImg) {
+            bar_code = `<div class="barcode-sec"><img src="${barcodeImg}" alt="Barcode Image" width="300"></div>`;
+        }else{
+            bar_code = '<p>No Bar code</p>';
+        }
 
         html += `
         <section class="container">
@@ -168,6 +175,7 @@
             <div class="address-sec">
                 <div class="address">
                     <p style='padding-bottom:5px;'>${user['first name'] || ''} ${user['last name'] || ''},</p>
+                    ${bar_code}
                     <p>${fullAddr}</p>
                 </div>
                 <div class="image-sec">
@@ -217,7 +225,7 @@
             </div>
             <div class="footer-section">${data.footer_cnt}</div>
         </section>
-        `;
+        `;        
     });
 
     document.getElementById('pdf-content').innerHTML = html;

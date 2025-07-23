@@ -27,13 +27,16 @@ $static = $result->fetch_assoc();
                         <img src="<?= htmlspecialchars($static['image_path']) ?>" alt="Current Image" width="100">
                     <?php endif; ?>
                 </div>
-
                 <div>
-                    <input type="file" name="csv" accept=".csv">
+                    <label>Upload QR PDF:</label>
+                    <input type="file" name="qr_pdf" accept="application/pdf">
+                </div>        
+                <div>
+                    <input type="file" name="csv" accept=".csv" >
 
-                    <?php if (!empty($static['csv_path'])): ?>
+                   <!-- <?php if (!empty($static['csv_path'])): ?>
                         <p>Current CSV: <a href="<?= htmlspecialchars($static['csv_path']) ?>" target="_blank">Download Current CSV</a></p>
-                    <?php endif; ?>
+                    <?php endif; ?> -->
                 </div>
 
                 <textarea name="from_us_to_you_cnt1" placeholder="From us to you content1"><?= htmlspecialchars($static['from_us_to_you_cnt1'] ?? '') ?></textarea>

@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$dbname = "pdf_app";
+$dbname = "lieq_staging_1";
 
 $conn = new mysqli($host, $user, $pass, $dbname);
 
