@@ -1,7 +1,11 @@
 .form-field-div{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-    gap: 15px;
+    max-width: 62rem;
+    margin: 0 auto;
+}
+p, textarea{
+    font-weight: 700;
+    color: #932313;
+    text-align: center;
 }
 body{
     background-image: linear-gradient(transparent 50%, #355e3b 50%);
@@ -51,4 +55,129 @@ button[type="submit"]{
 }
 button[type="submit"]:hover{    
     background-color: #bf7f51;
+}
+.pdfForm-file-upload-div{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+.pdfForm-head-section-div{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.pdfForm-bnr-section-div{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+.pdfForm-bnr-address{
+    display: flex;
+    flex-direction: column;
+}
+.pdfForm-bnr-address p{
+    margin-bottom: 0 !important;
+    max-width: 21rem;
+    color: #932313;
+    font-size: 20px;
+}
+.pdfForm-bnr-address img{
+    width: 19rem;
+}
+.form-body-section{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 5px;
+}
+.from_us_to_you_section, .in_addition_section, .cnt_address_and_img{
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+.footer_cnt{
+    width: 100%;
+    margin-top: 1rem;
+    font-size: 20px;
+    height: 4rem;
+}
+.from_us_to_you_cnt, .in_addition_cnt{
+    margin-top: 1rem;
+}
+.heading{
+    height: 5rem;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    color: #932313;
+}
+.sub_heading{
+    height: 4rem;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    color: #70ad5b;
+}
+.from_us_to_you_title, .in_addition_title{
+    height: 4rem;
+    font-size: 20px;
+}
+.cnt_sec_image_div{
+    margin-top: 20px;
+}
+.cnt_sec_image_div img{
+    width: 20rem;
+}
+.cnt_address_sec{
+    height: 23rem;
+}
+
+@media screen and (max-width:991px) {
+    #pdfForm input, #pdfForm textarea{
+        height: auto;
+    }
+    .pdfForm-bnr-address img{
+        width: 100%
+    }
+    .heading{
+        font-size: 25px;
+    }
+    .sub_heading{
+        font-size: 18px;
+    }
+    .pdfForm-bnr-address p{
+        font-size: 18px;
+    }
+    .from_us_to_you_title, .in_addition_title{
+        font-size: 14px;
+    }
+    .cnt_sec_image_div img {
+        width: 100%;
+    }
+    .footer_cnt{
+        font-size: 18px;
+    }
+    .cnt_address_sec {
+        height: 20rem !important;
+    }
+    .from_us_to_you_cnt, .in_addition_cnt{
+        font-size: 14px;
+    }
+}
+@media screen and (max-width:768px) {
+    body{
+        background: red !important;
+    }
+    .form-body-section{
+        grid-template-columns: 1fr;
+    }
+    .from_us_to_you_cnt, .in_addition_cnt{
+        height: 15rem;
+    }
+}
+@media screen and (max-width:575px) {
+    .container{
+        max-width: 100%;
+    }    
 }

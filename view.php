@@ -6,143 +6,139 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     session_start();
     $action = $_POST['action'];
 
-    // Collect form data
+    // Form fields
     $heading = $_POST['heading'] ?? '';
-    $subheading = $_POST['subheading'] ?? '';
-    $address = $_POST['address'] ?? '';
+    $sub_heading = $_POST['sub_heading'] ?? '';    
+    $from_us_to_you_title = $_POST['from_us_to_you_title'] ?? '';
+    $from_us_to_you_cnt = $_POST['from_us_to_you_cnt'] ?? '';
+    $cnt_address_sec = $_POST['cnt_address_sec'] ?? '';
+    $in_addition_title = $_POST['in_addition_title'] ?? '';
+    $in_addition_cnt = $_POST['in_addition_cnt'] ?? '';
+    $footer_cnt = $_POST['footer_cnt'] ?? '';
 
-    $futyc = [];
-    for ($i = 1; $i <= 6; $i++) {
-        $futyc["cnt$i"] = $_POST["from_us_to_you_cnt$i"] ?? '';
-    }
-
-    $propAddr = [];
-    for ($i = 1; $i <= 8; $i++) {
-        $propAddr["cnt$i"] = $_POST["prop_address_cnt$i"] ?? '';
-    }
-
-    $inAddition = [];
-    for ($i = 1; $i <= 6; $i++) {
-        $inAddition["cnt$i"] = $_POST["in_addition_cnt$i"] ?? '';
-    }
-
-    $footer = $_POST['footer_cnt'] ?? '';
-
-    // 📁 Upload handling
+    // Upload folders
     $uploadDir = __DIR__ . '/uploads/';
     $tempDir = __DIR__ . '/temp/';
-    $barcodeOutputDir = __DIR__ . '/cropped_barcodes/';
     @mkdir($uploadDir, 0777, true);
     @mkdir($tempDir, 0777, true);
-    @mkdir($barcodeOutputDir, 0777, true);
 
-    $imagePath = '';
+    $bannerImagePath = '';
+    $contentImagePath = '';
     $csvPath = '';
     $qrPdfPath = '';
+    $qrPdfPathFull = '';
 
-    // Handle image upload
-    if (!empty($_FILES['image']['tmp_name'])) {
-        $imageName = uniqid() . '_' . basename($_FILES['image']['name']);
-        $targetPath = $uploadDir . $imageName;
-        move_uploaded_file($_FILES['image']['tmp_name'], $targetPath);
-        $imagePath = 'uploads/' . $imageName;
+    // 📤 Handle uploads
+    if (!empty($_FILES['banner_sec_image']['tmp_name'])) {
+        $name = uniqid() . '_' . basename($_FILES['banner_sec_image']['name']);
+        move_uploaded_file($_FILES['banner_sec_image']['tmp_name'], $uploadDir . $name);
+        $bannerImagePath = 'uploads/' . $name;
     }
 
-    // Handle CSV upload
-    if (!empty($_FILES['csv']['tmp_name'])) {
-        $csvName = uniqid() . '_' . basename($_FILES['csv']['name']);
-        $csvPathFull = $tempDir . $csvName;
-        move_uploaded_file($_FILES['csv']['tmp_name'], $csvPathFull);
-        $csvPath = 'temp/' . $csvName;
+    if (!empty($_FILES['cnt_sec_image']['tmp_name'])) {
+        $name = uniqid() . '_' . basename($_FILES['cnt_sec_image']['name']);
+        move_uploaded_file($_FILES['cnt_sec_image']['tmp_name'], $uploadDir . $name);
+        $contentImagePath = 'uploads/' . $name;
     }
 
-    // Handle QR PDF upload
+    if (!empty($_FILES['csv_file']['tmp_name'])) {
+        $name = uniqid() . '_' . basename($_FILES['csv_file']['name']);
+        move_uploaded_file($_FILES['csv_file']['tmp_name'], $tempDir . $name);
+        $csvPath = 'temp/' . $name;
+    }
+
     if (!empty($_FILES['qr_pdf']['tmp_name'])) {
-        $pdfName = uniqid() . '_qr.pdf';
-        $qrPdfPathFull = $uploadDir . $pdfName;
+        $name = uniqid() . '_qr.pdf';
+        $qrPdfPathFull = $uploadDir . $name;
         move_uploaded_file($_FILES['qr_pdf']['tmp_name'], $qrPdfPathFull);
-        $qrPdfPath = 'uploads/' . $pdfName;
+        $qrPdfPath = 'uploads/' . $name;
     }
 
     if (empty($qrPdfPathFull) || !file_exists($qrPdfPathFull)) {
         die("❌ Error: QR PDF file is required and was not uploaded properly.");
     }
 
-    // ✅ Validation: PDF pages vs CSV rows
+    // ✅ Validate CSV row count == PDF page count
     $pdfPageCount = 0;
     $csvRowCount = 0;
 
-    if (!empty($qrPdfPathFull) && file_exists($qrPdfPathFull)) {
-        $pythonPath = "C:\\Users\\mdm459\\AppData\\Local\\Programs\\Python\\Python313\\python.exe";
-        $pythonPageScript = __DIR__ . "/get_pdf_page_count.py";
+    $pythonPath = "C:\\Users\\mdm459\\AppData\\Local\\Programs\\Python\\Python313\\python.exe";
+    $pythonPageScript = __DIR__ . "/get_pdf_page_count.py";
+    $cmd = "\"$pythonPath\" " . escapeshellarg($pythonPageScript) . " " . escapeshellarg($qrPdfPathFull);
+    exec($cmd, $output, $status);
 
-        $cmdPageCount = "\"$pythonPath\" " . escapeshellarg($pythonPageScript) . " " . escapeshellarg($qrPdfPathFull) . " 2>&1";
-        $output = [];
-        exec($cmdPageCount, $output, $pageReturnCode);
-
-        echo "<pre>Return code: $pageReturnCode\nOutput:\n" . implode("\n", $output) . "</pre>";
-
-        // Update $pdfPageCount only if exec succeeded and output is valid
-        if ($pageReturnCode === 0 && isset($output[0]) && is_numeric(trim($output[0]))) {
-            $pdfPageCount = (int) trim($output[0]);
-        } else {
-            // Optional: handle error case here, e.g. throw or set to 0
-            $pdfPageCount = 0;
-        }
+    if ($status === 0 && isset($output[0]) && is_numeric(trim($output[0]))) {
+        $pdfPageCount = (int) trim($output[0]);
     }
 
-
-    if (!empty($csvPathFull) && file_exists($csvPathFull)) {
-        $lines = file($csvPathFull, FILE_SKIP_EMPTY_LINES);
-        $csvRowCount = count($lines) - 1; // Exclude header
+    if (!empty($csvPath) && file_exists(__DIR__ . '/' . $csvPath)) {
+        $lines = file(__DIR__ . '/' . $csvPath, FILE_SKIP_EMPTY_LINES);
+        $csvRowCount = count($lines) - 1;
     }
 
     if ($pdfPageCount !== $csvRowCount) {
-        die("❌ Validation failed: PDF has $pdfPageCount pages, but CSV has $csvRowCount data rows. Operation aborted.");
+        die("❌ PDF page count ($pdfPageCount) does not match CSV row count ($csvRowCount).");
     }
 
-    // ✅ Barcode extraction
-    if (!empty($qrPdfPathFull)) {
-        $barcodeRunFolder = $barcodeOutputDir . uniqid('run_');
-        @mkdir($barcodeRunFolder, 0777, true);
+    $fastApiUrl = "http://localhost:8000/crop-barcodes/";
+    $cfile = new CURLFile($qrPdfPathFull, 'application/pdf', basename($qrPdfPathFull));
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $fastApiUrl,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => ['file' => $cfile],
+    ]);
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 
-        $pythonPath = "C:\\Users\\mdm459\\AppData\\Local\\Programs\\Python\\Python313\\python.exe";
-        $cmd = "\"$pythonPath\" crop_barcode.py " . escapeshellarg($qrPdfPathFull) . " " . escapeshellarg($barcodeRunFolder);
-        exec($cmd . " 2>&1", $output, $returnCode);
-        echo "<pre>CMD: $cmd\nOutput:\n" . implode("\n", $output) . "\nReturn Code: $returnCode\n</pre>";
-
-        if ($returnCode !== 0) {
-            die("❌ Barcode cropping failed.");
-        }
+    if ($httpCode !== 200) {
+        die("❌ FastAPI barcode crop failed or returned invalid response: $res");
     }
 
-    // ✅ DB Operation
+    $response = json_decode($res, true);
+
+    if (!isset($response['files'])) {
+        die("file not found");
+    }
+    if (!isset($response['folder'])) {
+        die("Folder not found");
+    }
+
+    session_start();
+    $_SESSION['barcode_folder'] = $response['folder'];
+
+
+    // ✅ Store or update in DB
     $result = $conn->query("SELECT id FROM static_content ORDER BY id DESC LIMIT 1");
-
+    $query = '';
     if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $id = $row['id'];
-
-        $query = "UPDATE static_content SET heading=?, subheading=?, address=?,
-            from_us_to_you_cnt1=?, from_us_to_you_cnt2=?, from_us_to_you_cnt3=?, from_us_to_you_cnt4=?, from_us_to_you_cnt5=?, from_us_to_you_cnt6=?,
-            prop_address_cnt1=?, prop_address_cnt2=?, prop_address_cnt3=?, prop_address_cnt4=?, prop_address_cnt5=?, prop_address_cnt6=?, prop_address_cnt7=?, prop_address_cnt8=?,
-            in_addition_cnt1=?, in_addition_cnt2=?, in_addition_cnt3=?, in_addition_cnt4=?, in_addition_cnt5=?, in_addition_cnt6=?,
-            footer_cnt=?";
+        $id = $result->fetch_assoc()['id'];
+        $query = "UPDATE static_content SET
+            heading=?, sub_heading=?, 
+            from_us_to_you_title=?, from_us_to_you_cnt=?, cnt_address_sec=?,
+            in_addition_title=?, in_addition_cnt=?, footer_cnt=?";
 
         $params = [
-            $heading, $subheading, $address,
-            $futyc['cnt1'], $futyc['cnt2'], $futyc['cnt3'], $futyc['cnt4'], $futyc['cnt5'], $futyc['cnt6'],
-            $propAddr['cnt1'], $propAddr['cnt2'], $propAddr['cnt3'], $propAddr['cnt4'], $propAddr['cnt5'], $propAddr['cnt6'], $propAddr['cnt7'], $propAddr['cnt8'],
-            $inAddition['cnt1'], $inAddition['cnt2'], $inAddition['cnt3'], $inAddition['cnt4'], $inAddition['cnt5'], $inAddition['cnt6'],
-            $footer
+            $heading, $sub_heading,
+            $from_us_to_you_title, $from_us_to_you_cnt, $cnt_address_sec,
+            $in_addition_title, $in_addition_cnt, $footer_cnt
         ];
         $types = str_repeat('s', count($params));
 
-        if (!empty($imagePath)) {
-            $query .= ", image_path=?";
-            $params[] = $imagePath;
+        if (!empty($bannerImagePath)) {
+            $query .= ", banner_sec_image=?";
+            $params[] = $bannerImagePath;
             $types .= 's';
         }
+
+        if (!empty($contentImagePath)) {
+            $query .= ", cnt_sec_image=?";
+            $params[] = $contentImagePath;
+            $types .= 's';
+        }
+
         if (!empty($csvPath)) {
             $query .= ", csv_path=?";
             $params[] = $csvPath;
@@ -157,36 +153,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $stmt->close();
-
     } else {
-        // Insert new
         $query = "INSERT INTO static_content (
-            heading, subheading, address,
-            from_us_to_you_cnt1, from_us_to_you_cnt2, from_us_to_you_cnt3, from_us_to_you_cnt4, from_us_to_you_cnt5, from_us_to_you_cnt6,
-            prop_address_cnt1, prop_address_cnt2, prop_address_cnt3, prop_address_cnt4, prop_address_cnt5, prop_address_cnt6, prop_address_cnt7, prop_address_cnt8,
-            in_addition_cnt1, in_addition_cnt2, in_addition_cnt3, in_addition_cnt4, in_addition_cnt5, in_addition_cnt6,
-            footer_cnt, image_path, csv_path
-        ) VALUES (?, ?, ?,
-            ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?, ?,
-            ?, ?, ?)";
+            heading, sub_heading,
+            from_us_to_you_title, from_us_to_you_cnt, cnt_address_sec,
+            in_addition_title, in_addition_cnt, footer_cnt,
+            banner_sec_image, cnt_sec_image, csv_path
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($query);
+
         $stmt->bind_param(
-            'ssssssssssssssssssssssssss',
-            $heading, $subheading, $address,
-            $futyc['cnt1'], $futyc['cnt2'], $futyc['cnt3'], $futyc['cnt4'], $futyc['cnt5'], $futyc['cnt6'],
-            $propAddr['cnt1'], $propAddr['cnt2'], $propAddr['cnt3'], $propAddr['cnt4'], $propAddr['cnt5'], $propAddr['cnt6'], $propAddr['cnt7'], $propAddr['cnt8'],
-            $inAddition['cnt1'], $inAddition['cnt2'], $inAddition['cnt3'], $inAddition['cnt4'], $inAddition['cnt5'], $inAddition['cnt6'],
-            $footer, $imagePath, $csvPath
+            "sssssssssss",  // 12 strings
+            $heading, $sub_heading,
+            $from_us_to_you_title, $from_us_to_you_cnt, $cnt_address_sec,
+            $in_addition_title, $in_addition_cnt, $footer_cnt,
+            $banner_sec_image, $cnt_sec_image, $csv_path
         );
+
         $stmt->execute();
         $stmt->close();
     }
 
     $_SESSION['action'] = $action;
-    echo "<script>window.location.href='template.html';</script>";
+    // ✅ Now pass the action in the URL
+    header("Location: template.php?action=view");
     exit;
 }
 ?>

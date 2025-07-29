@@ -5,42 +5,53 @@ include 'db.php';
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 header('Content-Type: application/json');
 
-$data = [];
+$response = [];
 
-// ✅ Fetch latest DB record
-$result = $conn->query("SELECT * FROM static_content ORDER BY id DESC LIMIT 1");
-if ($result->num_rows > 0) {
-    $data = $result->fetch_assoc();
+// ✅ Fetch latest static content from database
+try {
+    $stmt = $conn->prepare("SELECT * FROM static_content ORDER BY id DESC LIMIT 1");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $response = $result->fetch_assoc() ?? [];
+    $stmt->close();
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    exit;
 }
 
-// ✅ Set action (view/download)
-$data['action'] = $_SESSION['action'] ?? 'view';
-unset($_SESSION['action']); // Clear session after use
+// ✅ Get session-based action ("view" or "download")
+$response['action'] = $_SESSION['action'] ?? 'view';
+unset($_SESSION['action']); // Clear it after using
 
-// ✅ Locate latest barcode folder inside cropped_barcodes/run_*
-$barcodeDir = __DIR__ . '/cropped_barcodes';
-$runFolders = glob($barcodeDir . '/run_*', GLOB_ONLYDIR);
-
+// ✅ Locate latest barcode folder from /cropped_barcodes/run_*
+$barcodeBaseDir = __DIR__ . '/cropped_barcodes';
 $barcodes = [];
-if (!empty($runFolders)) {
-    rsort($runFolders); // Sort by latest
-    $latestRun = $runFolders[0];
 
-    // Get all .png or .jpg files (adjust extension if needed)
-    $files = glob($latestRun . '/*.png');
-    if (empty($files)) {
-        $files = glob($latestRun . '/*.jpg');
-    }
+if (is_dir($barcodeBaseDir)) {
+    $runFolders = glob($barcodeBaseDir . '/run_*', GLOB_ONLYDIR);
+    
+    if (!empty($runFolders)) {
+        rsort($runFolders); // Sort descending (latest first)
+        $latestRun = $runFolders[0];
 
-    sort($files); // Ensure they are in order
-    foreach ($files as $file) {
-        // Return relative paths for HTML use
-        $relativePath = 'cropped_barcodes/' . basename($latestRun) . '/' . basename($file);
-        $barcodes[] = $relativePath;
+        // ✅ Collect all .png or .jpg files in latest run folder
+        $imageFiles = glob($latestRun . '/*.png');
+        if (empty($imageFiles)) {
+            $imageFiles = glob($latestRun . '/*.jpg');
+        }
+
+        sort($imageFiles); // Sort ascending
+
+        foreach ($imageFiles as $img) {
+            // Make path relative for frontend use
+            $relativePath = 'cropped_barcodes/' . basename($latestRun) . '/' . basename($img);
+            $barcodes[] = $relativePath;
+        }
     }
 }
 
-$data['barcodes'] = $barcodes;
+$response['barcodes'] = $barcodes;
 
-// ✅ Return response
-echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+// ✅ Final JSON response
+echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
