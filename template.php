@@ -239,6 +239,7 @@
             const cnt_sec_image_base64 = await getBase64FromUrl(data.cnt_sec_image);
 
             const payload = {
+                folder_name: folderName, // ✅ Pass the folder name to API
                 heading: data.heading,
                 sub_heading: data.sub_heading,
                 from_us_to_you_title: data.from_us_to_you_title,
@@ -251,27 +252,30 @@
                 users: usersWithBase64
             };
 
-            const response = await fetch('http://localhost:8000/generate-pdf/', {
+            const res = await fetch('/generate-pdf', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
             });
 
-            if (!response.ok) throw new Error('PDF generation failed');
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ message: 'Unknown error' }));
+                console.error('PDF error', err);
+                alert('PDF generation failed');
+                return;
+            }
 
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'generated.pdf';
+            a.download = (payload.filename || 'generated') + '.pdf';
             document.body.appendChild(a);
             a.click();
             a.remove();
-            window.URL.revokeObjectURL(url);
-
-        } catch (err) {
+            URL.revokeObjectURL(url);
+        } 
+        catch (err) {
             alert("Error downloading PDF: " + err.message);
         }
     }

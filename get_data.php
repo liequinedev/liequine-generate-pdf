@@ -22,30 +22,37 @@ try {
 
 // ✅ Get session-based action ("view" or "download")
 $response['action'] = $_SESSION['action'] ?? 'view';
-unset($_SESSION['action']); // Clear it after using
+unset($_SESSION['action']); // Clear after using
 
-// ✅ Locate latest barcode folder from /cropped_barcodes/run_*
+// ✅ Locate barcode folder
 $barcodeBaseDir = __DIR__ . '/cropped_barcodes';
 $barcodes = [];
 
 if (is_dir($barcodeBaseDir)) {
-    $runFolders = glob($barcodeBaseDir . '/run_*', GLOB_ONLYDIR);
-    
-    if (!empty($runFolders)) {
-        rsort($runFolders); // Sort descending (latest first)
-        $latestRun = $runFolders[0];
+    // Prefer the session folder if set
+    if (!empty($_SESSION['barcode_folder'])) {
+        $selectedFolder = $barcodeBaseDir . '/' . $_SESSION['barcode_folder'];
+    } else {
+        // Fallback: pick latest folder if session not set
+        $runFolders = glob($barcodeBaseDir . '/run_*', GLOB_ONLYDIR);
+        if (!empty($runFolders)) {
+            rsort($runFolders); // Sort descending (latest first)
+            $selectedFolder = $runFolders[0];
+        }
+    }
 
-        // ✅ Collect all .png or .jpg files in latest run folder
-        $imageFiles = glob($latestRun . '/*.png');
+    // ✅ Collect all .png or .jpg files in the selected folder
+    if (!empty($selectedFolder) && is_dir($selectedFolder)) {
+        $imageFiles = glob($selectedFolder . '/*.png');
         if (empty($imageFiles)) {
-            $imageFiles = glob($latestRun . '/*.jpg');
+            $imageFiles = glob($selectedFolder . '/*.jpg');
         }
 
-        sort($imageFiles); // Sort ascending
+        sort($imageFiles); // Sort ascending by name
 
         foreach ($imageFiles as $img) {
-            // Make path relative for frontend use
-            $relativePath = 'cropped_barcodes/' . basename($latestRun) . '/' . basename($img);
+            // Make path relative for frontend
+            $relativePath = 'cropped_barcodes/' . basename($selectedFolder) . '/' . basename($img);
             $barcodes[] = $relativePath;
         }
     }

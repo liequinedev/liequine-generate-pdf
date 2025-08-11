@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; color: #942314; margin: 0; padding: 20px; }
+        .heading { text-align: center; }
+        .heading h1 { font-size: 24px; color: #942314; margin: 0; }
+        .heading h2 { font-size: 18px; color: #45ae5b; margin-top: 5px; }
+
+        .banner {
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .box {
+            border: 1px solid #000;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .footer {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        img.barcode {
+            margin-top: 5px;
+            width: 150px;
+        }
+
+        img.section-img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="heading">
+        <h1>{{ data.heading }}</h1>
+        <h2>{{ data.sub_heading }}</h2>
+    </div>
+
+    <div class="banner">
+        <p><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
+        {% if user.barcode_base64 %}
+            <img class="barcode" src="{{ user.barcode_base64 }}" />
+        {% endif %}
+        <p>{{ user.mailing_address }}</p>
+        <p>{{ user.mailing_town }}, {{ user.mailing_zip }}</p>
+        <p>{{ user.mailing_carrier_route }}, {{ user.county }}, {{ user.state }}</p>
+    </div>
+
+    <div class="grid">
+        <div class="box">
+            <p><strong>{{ data.from_us_to_you_title }}</strong></p>
+        </div>
+        <div class="box">
+            <p><strong>{{ data.cnt_address_sec }}</strong></p>
+        </div>
+        <div class="box">
+            <p><strong>{{ data.in_addition_title }}</strong></p>
+        </div>
+
+        <div class="box">
+            <p>Hello {{ user.first_name }},</p>
+            <p>{{ data.from_us_to_you_cnt }}</p>
+        </div>
+        <div class="box">
+            {% if data.cnt_sec_image_base64 %}
+                <img class="section-img" src="{{ data.cnt_sec_image_base64 }}" />
+            {% endif %}
+        </div>
+        <div class="box">
+            <p>{{ data.in_addition_cnt }}</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        {{ data.footer_cnt }}
+    </div>
+</body>
+</html>

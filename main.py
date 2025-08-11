@@ -11,11 +11,12 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or ["http://localhost:3000"] to be more secure
+    allow_origins=["http://localhost", "http://localhost:3000", "https://liequine.com/"],  # set actual frontend domain(s)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Include routers
 app.include_router(count_pages.router)

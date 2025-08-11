@@ -58,28 +58,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("❌ Error: QR PDF file is required and was not uploaded properly.");
     }
 
-    // ✅ Validate CSV row count == PDF page count
-    $pdfPageCount = 0;
-    $csvRowCount = 0;
+    // ✅ Get PDF page count from FastAPI instead of exec()
+    $fastApiPageCountUrl = "http://localhost:8000/count-pages/";
+    $cfilePage = new CURLFile($qrPdfPathFull, 'application/pdf', basename($qrPdfPathFull));
+    $chPage = curl_init();
+    curl_setopt_array($chPage, [
+        CURLOPT_URL => $fastApiPageCountUrl,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => ['file' => $cfilePage],
+    ]);
+    $pageRes = curl_exec($chPage);
+    $pageHttpCode = curl_getinfo($chPage, CURLINFO_HTTP_CODE);
+    curl_close($chPage);
 
-    $pythonPath = "C:\\Users\\mdm459\\AppData\\Local\\Programs\\Python\\Python313\\python.exe";
-    $pythonPageScript = __DIR__ . "/get_pdf_page_count.py";
-    $cmd = "\"$pythonPath\" " . escapeshellarg($pythonPageScript) . " " . escapeshellarg($qrPdfPathFull);
-    exec($cmd, $output, $status);
-
-    if ($status === 0 && isset($output[0]) && is_numeric(trim($output[0]))) {
-        $pdfPageCount = (int) trim($output[0]);
+    if ($pageHttpCode !== 200) {
+        die("❌ FastAPI page count failed: $pageRes");
     }
 
+    $pageData = json_decode($pageRes, true);
+    $pdfPageCount = $pageData['total_pages'] ?? 0;
+
+    // ✅ CSV row count
+    $csvRowCount = 0;
     if (!empty($csvPath) && file_exists(__DIR__ . '/' . $csvPath)) {
         $lines = file(__DIR__ . '/' . $csvPath, FILE_SKIP_EMPTY_LINES);
         $csvRowCount = count($lines) - 1;
     }
 
+    // ✅ Compare counts
     if ($pdfPageCount !== $csvRowCount) {
         die("❌ PDF page count ($pdfPageCount) does not match CSV row count ($csvRowCount).");
     }
 
+    // ✅ Call FastAPI barcode crop
     $fastApiUrl = "http://localhost:8000/crop-barcodes/";
     $cfile = new CURLFile($qrPdfPathFull, 'application/pdf', basename($qrPdfPathFull));
     $ch = curl_init();
@@ -98,17 +110,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $response = json_decode($res, true);
-
-    if (!isset($response['files'])) {
-        die("file not found");
-    }
-    if (!isset($response['folder'])) {
-        die("Folder not found");
+    if (!isset($response['files']) || !isset($response['folder'])) {
+        die("❌ Missing files or folder from FastAPI response.");
     }
 
-    session_start();
     $_SESSION['barcode_folder'] = $response['folder'];
-
 
     // ✅ Store or update in DB
     $result = $conn->query("SELECT id FROM static_content ORDER BY id DESC LIMIT 1");
@@ -162,21 +168,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($query);
-
         $stmt->bind_param(
-            "sssssssssss",  // 12 strings
+            "sssssssssss",
             $heading, $sub_heading,
             $from_us_to_you_title, $from_us_to_you_cnt, $cnt_address_sec,
             $in_addition_title, $in_addition_cnt, $footer_cnt,
-            $banner_sec_image, $cnt_sec_image, $csv_path
+            $bannerImagePath, $contentImagePath, $csvPath
         );
-
         $stmt->execute();
         $stmt->close();
     }
 
     $_SESSION['action'] = $action;
-    // ✅ Now pass the action in the URL
     header("Location: template.php?action=view");
     exit;
 }
