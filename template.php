@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>Generated PDF</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -118,6 +119,14 @@
   <button id="downloadBtn">Download PDF</button>
   <button id="backBtn">Back</button>
 
+  <!-- Loader -->
+<div id="loader-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#fff8f8e3; z-index:9999; text-align:center; padding-top:20%;">
+  <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <p class="mt-3">Processing, please wait...</p>
+</div>
+
 <script>
     const folderName = "<?php session_start(); echo $_SESSION['barcode_folder'] ?? 'run_12345678'; ?>";
 
@@ -212,10 +221,11 @@
             downloadPDF(limitedUsers, data);
         }
     }
-
+    
     async function downloadPDF(users, data) {
-        // Show processing message if you want here
-        try {
+        const loader = document.getElementById('loader-overlay');
+        try {            
+            loader.style.display = 'block'; // Show loader
             // Convert all barcode images to base64
             const usersWithBase64 = await Promise.all(users.map(async (user, index) => {
                 const barcodeUrl = data.barcodes && data.barcodes[index] ? data.barcodes[index] : null;
@@ -235,24 +245,19 @@
             }));
 
             // Convert static images to base64
-            const banner_sec_image_base64 = await getBase64FromUrl(data.banner_sec_image);
             const cnt_sec_image_base64 = await getBase64FromUrl(data.cnt_sec_image);
 
+            // Payload matches backend expectations
             const payload = {
-                folder_name: folderName, // ✅ Pass the folder name to API
                 heading: data.heading,
                 sub_heading: data.sub_heading,
-                from_us_to_you_title: data.from_us_to_you_title,
                 from_us_to_you_cnt: data.from_us_to_you_cnt,
-                cnt_address_sec: data.cnt_address_sec,
                 cnt_sec_image_base64: cnt_sec_image_base64,
-                in_addition_title: data.in_addition_title,
-                in_addition_cnt: data.in_addition_cnt,
-                footer_cnt: data.footer_cnt,
                 users: usersWithBase64
             };
 
-            const res = await fetch('/generate-pdf', {
+            // Call the API — use /api/generate-pdf for Vercel
+            const res = await fetch('https://vercel-pdf-download.vercel.app/api/generate-pdf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -265,20 +270,25 @@
                 return;
             }
 
+            // Download the PDF
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = (payload.filename || 'generated') + '.pdf';
+            a.download = 'generated.pdf';
             document.body.appendChild(a);
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-        } 
-        catch (err) {
+
+        } catch (err) {
             alert("Error downloading PDF: " + err.message);
         }
+        finally {
+            loader.style.display = 'none'; // Hide loader regardless of success/fail
+        }
     }
+
 
     document.getElementById('downloadBtn').addEventListener('click', async () => {
         const response = await fetch('get_data.php');
@@ -298,6 +308,12 @@
 
     renderContent();
 </script>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+
 
 </body>
 </html>
