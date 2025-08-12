@@ -246,18 +246,25 @@
 
             // Convert static images to base64
             const cnt_sec_image_base64 = await getBase64FromUrl(data.cnt_sec_image);
+            const banner_sec_image_base64 = await getBase64FromUrl(data.banner_sec_image);
 
             // Payload matches backend expectations
             const payload = {
                 heading: data.heading,
                 sub_heading: data.sub_heading,
+                banner_sec_image_base64: banner_sec_image_base64,
+                from_us_to_you_title: data.from_us_to_you_title,
                 from_us_to_you_cnt: data.from_us_to_you_cnt,
+                cnt_address_sec: data.cnt_address_sec,                
                 cnt_sec_image_base64: cnt_sec_image_base64,
+                in_addition_title: data.in_addition_title,
+                in_addition_cnt: data.in_addition_cnt,
+                footer_cnt: data.footer_cnt,
                 users: usersWithBase64
             };
 
             // Call the API — use /api/generate-pdf for Vercel
-            const res = await fetch('https://vercel-pdf-download.vercel.app/api/generate-pdf', {
+            const res = await fetch('http://localhost:3000/api/generate-pdf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

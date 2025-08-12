@@ -48,7 +48,7 @@ if (is_dir($barcodeBaseDir)) {
             $imageFiles = glob($selectedFolder . '/*.jpg');
         }
 
-        sort($imageFiles); // Sort ascending by name
+        natsort($imageFiles); // Sort ascending by name
 
         foreach ($imageFiles as $img) {
             // Make path relative for frontend
