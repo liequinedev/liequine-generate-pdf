@@ -264,7 +264,7 @@
             };
 
             // Call the API — use /api/generate-pdf for Vercel
-            const res = await fetch('http://localhost:3000/api/generate-pdf', {
+            const res = await fetch('https://vercel-pdf-download.vercel.app/api/generate-pdf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

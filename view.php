@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($qrPdfPathFull) || !file_exists($qrPdfPathFull)) {
-        die("❌ Error: QR PDF file is required and was not uploaded properly.");
+        die("❌ Error: Mailing PDF file is required and was not uploaded properly.");
     }
 
     // ✅ Get PDF page count from FastAPI instead of exec()

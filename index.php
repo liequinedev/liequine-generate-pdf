@@ -19,7 +19,7 @@ $static = $result->fetch_assoc();
             <div class="pdfForm-file-upload-div">
                 <!-- QR PDF -->
                 <div>
-                    <label>Upload QR PDF:</label>
+                    <label>Upload Mailing PDF:</label>
                     <input type="file" name="qr_pdf" accept="application/pdf">
                 </div>
 
@@ -38,7 +38,9 @@ $static = $result->fetch_assoc();
             <div class="pdfForm-bnr-section-div">
                 <div class="pdfForm-bnr-address">
                     
-                    <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Ducimus, esse!</p>
+                    <p>{{Name}}</p>
+                    <p>{{QR Code}}</p>
+                    <p>{{Address}}</p>
                 </div>
 
                 <!-- Banner Section Image -->
@@ -84,8 +86,8 @@ $static = $result->fetch_assoc();
 
         <!-- Buttons -->
         <div class="pdfform-btn">
-            <button type="submit" name="action" value="view">View PDF</button>
-            <button type="submit" name="action" value="download">Download PDF</button>
+            <button type="submit" name="action" value="view">Preview PDF</button>
+            <!-- <button type="submit" name="action" value="download">Download PDF</button> -->
         </div>
     </form>
 </div>
