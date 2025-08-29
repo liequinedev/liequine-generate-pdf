@@ -53,6 +53,7 @@
         text-align: center;
         margin-bottom: 8px;
         font-weight: 700;
+        color: #932313;   
     }
     .static-subcnt-div {
         border: 2px solid #932313;
@@ -104,6 +105,11 @@
     }
     #backBtn:hover {
         background-color: #bf7f51;
+    }
+    .address-section-indiv{
+        display:flex;
+        justify-content: space-between;
+        gap:30px;
     }
     @media print {
         #downloadBtn, #backBtn {
@@ -165,7 +171,9 @@
         let html = '';
         limitedUsers.forEach((user, index) => {
             const line1 = [user['mailing address']].filter(Boolean).join(' ');
-            const line2 = [user['mailing town'], user['mailing zip'], user['mailing carrier route'], user['county'], user['state']].filter(Boolean).join(', ');
+            const line2 = [user['city-state-zip']].filter(Boolean).join(', ');
+            const bin_number = [user['presorttrayid']].filter(Boolean).join(', ');
+            const date = [user['presortdate']].filter(Boolean).join(', ');
             const fullAddr = `${line1}<br>${line2}`;
             const barcodeImg = data.barcodes && data.barcodes[index] ? data.barcodes[index] : null;
 
@@ -179,9 +187,18 @@
                 <h3>${data.sub_heading}</h3>
                 <div class="address-sec">
                     <div class="address">
-                        <p style='padding-bottom:5px;'>${user['first name'] || ''} ${user['last name'] || ''},</p>
+                        <p style='padding-bottom:5px;'>${user['owner first name'] || ''} ${user['owner last name'] || ''},</p>
                         ${bar_code}
-                        <p>${fullAddr}</p>
+                        <div class="address-section-indiv">
+                          <div>
+                            <p>${line1}</p>
+                            <p>${line2}</p>
+                          </div>
+                          <div>
+                            <p>${bin_number}</p>
+                            <p>${date}</p>
+                          </div>
+                        </div>                        
                     </div>
                     <div class="image-sec">
                         <img src="${data.banner_sec_image}" alt="Image" width="300">
@@ -192,7 +209,7 @@
                     <div class="static-cnt-div section1">
                         <div class="static-title">${data.from_us_to_you_title}</div>
                         <div class="static-subcnt-div">
-                            <p>Hello ${user['first name'] || ''}, </p>
+                            <p>Hello ${user['owner first name'] || ''}, </p>
                             <p>${data.from_us_to_you_cnt}</p>
                         </div>
                     </div>
@@ -232,15 +249,17 @@
                 const barcode_base64 = barcodeUrl ? await getBase64FromUrl(barcodeUrl) : null;
 
                 return {
-                    first_name: user['first name'],
-                    last_name: user['last name'],
+                    first_name: user['owner first name'],
+                    last_name: user['owner last name'],
                     mailing_address: user['mailing address'],
-                    mailing_town: user['mailing town'],
-                    mailing_zip: user['mailing zip'],
-                    mailing_carrier_route: user['mailing carrier route'],
-                    county: user['county'],
-                    state: user['state'],
-                    barcode_base64: barcode_base64
+                    // mailing_town: user['mailing town'],
+                    mailing_zip: user['city-state-zip'],
+                    // mailing_carrier_route: user['mailing carrier route'],
+                    // county: user['county'],
+                    // state: user['state'],
+                    barcode_base64: barcode_base64,
+                    bin_number: user['presorttrayid'],
+                    date: user['presortdate']
                 };
             }));
 
@@ -275,6 +294,8 @@
                 console.error('PDF error', err);
                 alert('PDF generation failed');
                 return;
+            }else{
+                console.log("PDF generation Success");
             }
 
             // Download the PDF
@@ -292,6 +313,7 @@
             alert("Error downloading PDF: " + err.message);
         }
         finally {
+            console.log("PDF Downloaded Successfully");
             loader.style.display = 'none'; // Hide loader regardless of success/fail
         }
     }

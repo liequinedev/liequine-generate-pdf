@@ -1,9 +1,15 @@
 <?php
 include 'db.php';
+include_once 'logger.php';
 
 // Get latest static content
 $result = $conn->query("SELECT * FROM static_content ORDER BY id DESC LIMIT 1");
 $static = $result->fetch_assoc();
+if($static == ''){
+    logError("Static Data Fetching faild");
+}else{
+    logInfo("Static Data Fetch Success");
+}
 ?>
 <!DOCTYPE html>
 <html>

@@ -9,9 +9,9 @@ import uuid
 router = APIRouter()
 
 # Crop settings
-CROP_X = 805
+CROP_X = 835
 CROP_Y = 610
-CROP_WIDTH = 925
+CROP_WIDTH = 895
 CROP_HEIGHT = 115
 
 @router.post("/crop-barcodes/")

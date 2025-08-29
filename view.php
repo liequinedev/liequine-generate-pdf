@@ -1,5 +1,6 @@
 <?php
 include 'db.php';
+include_once 'logger.php';
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -55,7 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($qrPdfPathFull) || !file_exists($qrPdfPathFull)) {
+        logError('Mailing PDF file is required and was not uploaded properly.');
         die("❌ Error: Mailing PDF file is required and was not uploaded properly.");
+    }else{
+        logInfo('Mailing PDF file uploaded properly.');
     }
 
     // ✅ Get PDF page count from FastAPI instead of exec()
@@ -73,7 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     curl_close($chPage);
 
     if ($pageHttpCode !== 200) {
-        die("❌ FastAPI page count failed: $pageRes");
+        logError('PDF count failed:' . $pageRes);
+        die("❌ PDF count failed: $pageRes");
+    }else{
+        logInfo("PDF Count Success");
     }
 
     $pageData = json_decode($pageRes, true);
@@ -88,7 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ✅ Compare counts
     if ($pdfPageCount !== $csvRowCount) {
+        logError("PDF page count ($pdfPageCount) does not match CSV row count ($csvRowCount).");
         die("❌ PDF page count ($pdfPageCount) does not match CSV row count ($csvRowCount).");
+    }else{
+        logInfo("PDF and CSV Count Matched");
     }
 
     // ✅ Call FastAPI barcode crop
@@ -106,12 +116,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     curl_close($ch);
 
     if ($httpCode !== 200) {
+        logError("FastAPI barcode crop failed or returned invalid response: $res");
         die("❌ FastAPI barcode crop failed or returned invalid response: $res");
+    }else{
+        logInfo("FastAPI barcode crop Success");
     }
 
     $response = json_decode($res, true);
     if (!isset($response['files']) || !isset($response['folder'])) {
-        die("❌ Missing files or folder from FastAPI response.");
+        logError("Missing files or folder from FastAPI response: $response");
+        die("❌ Missing files or folder from FastAPI response: $response");
+    }else{
+        logInfo("File and Folder Path Available in Response");
     }
 
     $_SESSION['barcode_folder'] = $response['folder'];
