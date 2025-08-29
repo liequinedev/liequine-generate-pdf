@@ -308,8 +308,24 @@
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
+            await fetch('log_action.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    action: 'info',
+                    message: 'PDF downloaded successfully'
+                })
+            });
 
         } catch (err) {
+            await fetch('log_action.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    action: 'error',
+                    message: 'PDF download failed: ' + err.message
+                })
+            });
             alert("Error downloading PDF: " + err.message);
         }
         finally {

@@ -197,6 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $_SESSION['action'] = $action;
     header("Location: template.php?action=view");
+    logInfo("Redirected to view PDF page");
     exit;
 }
 ?>
