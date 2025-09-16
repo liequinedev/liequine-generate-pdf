@@ -1,1 +1,4 @@
 .vercel
+cropped_barcodes/
+__pycache__/    
+temp/
